@@ -1,0 +1,155 @@
+Motor:
+import RPi.GPIO as GPIO
+from time import sleep
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
+ 
+class Motor():
+    def __init__(self,EnaA,In1A,In2A,EnaB,In1B,In2B):
+        self.EnaA = EnaA
+        self.In1A = In1A
+        self.In2A = In2A
+        self.EnaB = EnaB
+        self.In1B = In1B
+        self.In2B = In2B
+        GPIO.setup(self.EnaA,GPIO.OUT)
+        GPIO.setup(self.In1A,GPIO.OUT)
+        GPIO.setup(self.In2A,GPIO.OUT)
+        GPIO.setup(self.EnaB,GPIO.OUT)
+        GPIO.setup(self.In1B,GPIO.OUT)
+        GPIO.setup(self.In2B,GPIO.OUT)
+        self.pwmA = GPIO.PWM(self.EnaA, 100);
+        self.pwmA.start(0);
+        self.pwmB = GPIO.PWM(self.EnaB, 100);
+        self.pwmB.start(0);
+ 
+    def move(self,speed=0.5,turn=0,t=0):
+        speed *=100
+        turn *=100
+        leftSpeed = speed - turn
+        rightSpeed = speed + turn
+        if leftSpeed>100: leftSpeed=100
+        elif leftSpeed<-100: leftSpeed= -100
+        if rightSpeed>100: rightSpeed=100
+        elif rightSpeed<-100: rightSpeed= -100
+ 
+        self.pwmA.ChangeDutyCycle(abs(leftSpeed))
+        self.pwmB.ChangeDutyCycle(abs(rightSpeed))
+ 
+        if leftSpeed>0:
+            GPIO.output(self.In1A,GPIO.HIGH)
+            GPIO.output(self.In2A,GPIO.LOW)
+        else:
+            GPIO.output(self.In1A,GPIO.LOW)
+            GPIO.output(self.In2A,GPIO.HIGH)
+ 
+        if rightSpeed>0:
+            GPIO.output(self.In1B,GPIO.HIGH)
+            GPIO.output(self.In2B,GPIO.LOW)
+        else:
+            GPIO.output(self.In1B,GPIO.LOW)
+            GPIO.output(self.In2B,GPIO.HIGH)
+ 
+        sleep(t)
+    def stop(self,t=0):
+        self.pwmA.ChangeDutyCycle(0);
+        self.pwmB.ChangeDutyCycle(0);
+        sleep(t)
+ 
+ 
+def main():
+    motor.move(0.6,0,2)
+    motor.stop(2)
+    motor.move(-0.5,0.2,2)
+    motor.stop(2)
+ 
+if __name__ == '__main__':
+    motor= Motor(2,3,4,17,22,27)
+    main()
+
+
+
+Car:
+from MotorModule import Motor
+ 
+motor= Motor(2,3,4,17,22,27)
+ 
+def main():
+    motor.move(0.6,0,2)
+    motor.stop(2)
+    motor.move(-0.5,0.2,2)
+    motor.stop(2)
+ 
+if __name__ == '__main__':
+    while True:
+        main()
+
+Getting the curve:
+def getLaneCurve(img):
+    imgThres = utlis.thresholding(img)
+
+Tresholding:
+def thresholding(img):
+    hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+    lowerWhite = np.array([85, 0, 0])
+    upperWhite = np.array([179, 160, 255])
+    maskedWhite= cv2.inRange(hsv,lowerWhite,upperWhite)
+    return maskedWhite
+
+Color Picker Script:
+Python
+import cv2
+import numpy as np
+ 
+frameWidth = 640
+frameHeight = 480
+cap = cv2.VideoCapture(1)
+cap.set(3, frameWidth)
+cap.set(4, frameHeight)
+ 
+ 
+def empty(a):
+    pass
+ 
+cv2.namedWindow("HSV")
+cv2.resizeWindow("HSV", 640, 240)
+cv2.createTrackbar("HUE Min", "HSV", 0, 179, empty)
+cv2.createTrackbar("HUE Max", "HSV", 179, 179, empty)
+cv2.createTrackbar("SAT Min", "HSV", 0, 255, empty)
+cv2.createTrackbar("SAT Max", "HSV", 255, 255, empty)
+cv2.createTrackbar("VALUE Min", "HSV", 0, 255, empty)
+cv2.createTrackbar("VALUE Max", "HSV", 255, 255, empty)
+ 
+cap = cv2.VideoCapture('vid1.mp4')
+frameCounter = 0
+ 
+while True:
+    frameCounter +=1
+    if cap.get(cv2.CAP_PROP_FRAME_COUNT) ==frameCounter:
+        cap.set(cv2.CAP_PROP_POS_FRAMES,0)
+        frameCounter=0
+ 
+    _, img = cap.read()
+    imgHsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+ 
+    h_min = cv2.getTrackbarPos("HUE Min", "HSV")
+    h_max = cv2.getTrackbarPos("HUE Max", "HSV")
+    s_min = cv2.getTrackbarPos("SAT Min", "HSV")
+    s_max = cv2.getTrackbarPos("SAT Max", "HSV")
+    v_min = cv2.getTrackbarPos("VALUE Min", "HSV")
+    v_max = cv2.getTrackbarPos("VALUE Max", "HSV")
+    print(h_min)
+ 
+    lower = np.array([h_min, s_min, v_min])
+    upper = np.array([h_max, s_max, v_max])
+    mask = cv2.inRange(imgHsv, lower, upper)
+    result = cv2.bitwise_and(img, img, mask=mask)
+ 
+    mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+    hStack = np.hstack([img, mask, result])
+    cv2.imshow('Horizontal Stacking', hStack)
+    if cv2.waitKey(1) and 0xFF == ord('q'):
+        break
+ 
+cap.release()
+cv2.destroyAllWindows()
